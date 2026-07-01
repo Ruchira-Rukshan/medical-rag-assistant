@@ -1,0 +1,5 @@
+temp_upload/
+__pycache__/
+*.pyc
+.env
+.git/
