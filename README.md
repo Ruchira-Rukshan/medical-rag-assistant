@@ -30,6 +30,7 @@ The platform is designed to handle document processing, semantic search, and gen
 | 🗄️ **Vector Storage** | Persistent local storage via **ChromaDB**, ensuring rapid semantic retrieval without external database dependencies. |
 | 🤖 **LLM Inference** | Powered by **Qwen 2.5 7B Instruct** via the HuggingFace Serverless Inference API for highly contextual medical answers. |
 | 📑 **Source Citations** | Mitigates AI hallucinations by strictly citing the exact PDF file name, page number, and text snippet used to generate the answer. |
+| 🛑 **Anti-Hallucination** | Enforces a strict QA Prompt Template to prevent external knowledge use and dynamically hides citations if the answer is not found in the PDFs. |
 | 🔒 **Secure Auth** | Integrated Hugging Face Secret management for secure API token handling with a user-friendly UI fallback. |
 
 ## 🛠️ Technology Stack
