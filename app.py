@@ -90,15 +90,12 @@ try:
 
     # --- CHAT INTERFACE ---
     qa_prompt_tmpl_str = (
-        "You are a strict AI assistant that ONLY answers questions based on the provided context. Do NOT perform calculations.\n"
         "Context information is below.\n"
         "---------------------\n"
         "{context_str}\n"
         "---------------------\n"
-        "CRITICAL INSTRUCTIONS:\n"
-        "1. Answer the query using ONLY the context provided above. Do NOT use outside knowledge, general trivia, or perform math calculations.\n"
-        "2. If the query is a math problem, calculation, greeting, or anything NOT directly mentioned in the context, you MUST reply with EXACTLY: 'I cannot find the answer in the provided research documents.'\n"
-        "3. Do NOT attempt to explain your reasoning, do NOT give preambles, and do NOT say things like 'The answer is X but it is not in the context'. Just output the exact refusal phrase and nothing else.\n"
+        "You are an expert medical assistant. Answer the query using ONLY the context information above.\n"
+        "If the answer cannot be found in the context, or if the user asks a math problem, greeting, or general trivia, you must strictly answer: 'I cannot find the answer in the provided research documents.'\n"
         "Query: {query_str}\n"
         "Answer: "
     )
