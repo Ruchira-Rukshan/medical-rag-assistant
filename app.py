@@ -2,7 +2,7 @@ import streamlit as st
 import chromadb
 import os
 import shutil
-from llama_index.core import VectorStoreIndex, Settings, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, Settings, SimpleDirectoryReader, PromptTemplate
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.llms.huggingface_api import HuggingFaceInferenceAPI
@@ -56,10 +56,10 @@ try:
     # 🌟 DYNAMIC UPLOADER SIDEBAR 🌟
     st.sidebar.header("📁 Upload New Medical Papers")
     uploaded_file = st.sidebar.file_uploader("Drag and drop your medical PDF here", type=["pdf"])
-
+    
     if 'processed_files' not in st.session_state:
         st.session_state.processed_files = set()
-
+        
     if uploaded_file is not None:
         if uploaded_file.name not in st.session_state.processed_files:
             # temporary folder 
@@ -89,16 +89,21 @@ try:
             st.sidebar.info(f"📁 Ready for questions based on: {uploaded_file.name}")
 
     # --- CHAT INTERFACE ---
-    system_prompt = (
-        "You are an expert medical research assistant. Synthesize an answer based ONLY on the medical context provided. "
-        "Do not use external knowledge or make facts up. If the answer cannot be found in the context, "
-        "clearly state: 'I cannot find the answer in the provided research documents.' Always mention key facts and numbers accurately."
+    qa_prompt_tmpl_str = (
+        "Context information is below.\n"
+        "---------------------\n"
+        "{context_str}\n"
+        "---------------------\n"
+        "Given the context information and not prior knowledge, answer the query.\n"
+        "If the answer is not contained in the context, strictly answer 'I cannot find the answer in the provided research documents.'\n"
+        "Query: {query_str}\n"
+        "Answer: "
     )
+    qa_prompt_tmpl = PromptTemplate(qa_prompt_tmpl_str)
     
-    query_engine = index.as_query_engine(similarity_top_k=3, system_prompt=system_prompt)
-
+    query_engine = index.as_query_engine(similarity_top_k=3, text_qa_template=qa_prompt_tmpl)
     user_query = st.text_input("Enter your medical or clinical research question:", placeholder="e.g., What does the text say about the sensitivity of rapid antigen tests?")
-
+    
     if user_query:
         with st.spinner("Analyzing research papers and generating response..."):
             response = query_engine.query(user_query)
@@ -106,16 +111,18 @@ try:
             st.subheader("💡 Analysis & Answer:")
             st.write(response.response)
             
-            st.markdown("---")
-            st.subheader("📑 Source Citations & Context Evidence:")
-            for i, node in enumerate(response.source_nodes):
-                metadata = node.node.metadata
-                file_name = metadata.get('file_name', 'Unknown File')
-                page_no = metadata.get('page_label', 'Unknown Page')
-                score = round(node.score, 4) if node.score else "N/A"
-                
-                with st.expander(f"Source {i+1}: {file_name} (Page {page_no}) | Confidence Score: {score}"):
-                    st.write(f"*{node.node.get_content()}*")
+            # Only show sources if the model actually found an answer
+            if "I cannot find the answer" not in response.response:
+                st.markdown("---")
+                st.subheader("📑 Source Citations & Context Evidence:")
+                for i, node in enumerate(response.source_nodes):
+                    metadata = node.node.metadata
+                    file_name = metadata.get('file_name', 'Unknown File')
+                    page_no = metadata.get('page_label', 'Unknown Page')
+                    score = round(node.score, 4) if node.score else "N/A"
+                    
+                    with st.expander(f"Source {i+1}: {file_name} (Page {page_no}) | Confidence Score: {score}"):
+                        st.write(f"*{node.node.get_content()}*")
 
 except Exception as e:
     st.error(f"Error loading pipeline: {e}")
